@@ -487,23 +487,32 @@ You can find the roots for any general implicit system of nonlinear equations,by
 
         The Lagrange multipliers are additional unknown variables who's values must be solved for, but from an engineering perspective they are not new design variables in the problem. 
         So you might be tempted to think they are merely mathematical tricks to maintain the well-posedness of the problem. 
-        However, they do have some physical meaning. 
-        The Lagrange multipliers represent the sensitivity of the optimum objective value to the constraint. 
-        So a very large Lagrange multiplier indicates that the solution is very sensitive to the constraint, and vice versa. 
+        However, we'll show you that they do have some physical meaning. 
 
-
-        Lets differentiate the Lagrangian with respect to all the unknown variables ($\lambda$ and $x$) and set the equations equal to 0: 
+        Differentiate the Lagrangian with respect to all the unknown variables ($\lambda$ and $x$) and set the result equal to 0: 
         \begin{alignat}{3}
             \frac{d\mathcal{L}}{d\lambda} &= H(x) &&= 0 \label{eq:dLdlambda} \\
             \frac{d\mathcal{L}}{dx} &= \frac{dF}{dx} - \lambda \frac{dH}{dx} &&= 0 \label{eq:dLdx}
         \end{alignat}
-        Because of Equation~\eqref{eq:dLdlambda}, solutions to this system of equations which clearly have to satisfy the equality constraints. 
-        Equation~\eqref{eq:dLdx} is what actually minimizes the Lagrangian.
-        If we have $N_h$ constraints, then  Equation~\eqref{eq:dLdlambda} is actually a set of $N_h$ equations. 
-        If we have $N_x$ design variables, then Equation~\eqref{eq:dLdx} is a set of $N_x$ equations. 
-        In total, this gives us $N_h + N_x$ equations, for which we need an equal number of degrees of freedom. 
+        This gives a system of (potentially nonlinear) equations that once satisfied will both minimize the objective and satisfy the constraints. 
+        Equation~\eqref{eq:dLdlambda} is simply the constraint equation restated. 
+        Equation~\eqref{eq:dLdx} is what actually minimizes the Lagrangian and the $\lambda \frac{dH}{dx}$ term is what accounts for the effect of the constraint itself on the final solution.
+        If we have $N_h$ constraints then we added $N_h$ extra $\lambda variables$ and Equation~\eqref{eq:dLdlambda} is a set of $N_h$ equations. 
+        For $N_x$ design variables Equation~\eqref{eq:dLdx} is a set of $N_x$ equations. 
+        In total, this gives us $N_h + N_x$ equations, is equal to the number of degrees of freedom. 
         This is why the Lagrange multipliers are necessary to be able to solve constrained optimization problems. 
         Without them, the system of equations you get from differentiating the Lagrangian would be over-defined. 
+
+        We can examine Equation~\eqref{eq:dLdx} more closely to gain insight into the physical meaning of $\lambda$. 
+        We can see that --- unlike for unconstrained optimization --- $\frac{dF}{dx}$ is now non-zero. 
+        Hence, small changes to the design point in the area of the optimum will now affect the objective. 
+        For simplicity, assume that there is only one scalar constraint value so that both $\lambda$ and $\frac{dH}{dx}$ are scalar values. Rearranging Equation~\eqref{eq:dLdx} then gives: 
+        \begin{equation}
+            \frac{dF}{dx} = \lambda \frac{dH}{dx}
+        \end{equation}
+        This tells you that $\lambda$ is the proportionality constant between the derivative of your constraint and the derivative of your objective. 
+        If $\lambda$ is very big, then you can expect small changes in your constraint to have a big impact on your objective, and vice versa. 
+        Another way to think of this is that $\lambda$ is the derivative of your objective with respect to the constraint value. 
 
 
         \subsubsection{Inequality constraints: $g = G(x) \ge 0$}
@@ -530,48 +539,83 @@ You can find the roots for any general implicit system of nonlinear equations,by
                 \hline
                 min. & $f$ \\
                 w.r.t & $x, \xi$ \\ 
-                subject to & $g + \xi = 0$ \\ 
-                           & $\xi < 0$ \\ \hline
+                subject to & $g - \xi^2 = 0$ \\ 
             \end{tabular}
         \end{table}
-        For this modification to be valid, we need to ensure that $\xi$ always takes on whatever value is necessary to enforce the constraint if it is active, but if the constraint is inactive then $\xi$ should have no impact on the solution. 
-        It is not obvious that things will work out this way from the given formulation, but luckily they do once we form the Lagrangian. 
-        \begin{align}
-            \mathcal{L}(x,\xi) &= F(x) + \lambda(G(x) + \xi) \notag \\
-                               &= F(x) + \lambda(G(x)) + \lambda \xi \label{eq:L_ineq}
-        \end{align}
+        In the original problem, we wanted $g \ge 0$, but now we have $g - \xi^2 = 0$. 
+        For these to be equivalent, we've added $\xi$ as an additional degree of freedom to the optimization 
+        so that it can take on whatever value is needed to satisfy the equality constraint. 
+        The lagrangian of this modified form looks like this: 
+        \begin{equation}
+            \mathcal{L}(x,\xi) = F(x) + \lambda(G(x) - \xi^2) \label{eq:L_ineq}
+        \end{equation}
 
-        Similar to before, we can take derivatives of the Lagrangian with respect to $x$ and $lambda$, which will yield 
+        Similar to before, we can take derivatives of the Lagrangian with respect to $x$ and $\lambda$, which will yield 
         $N_x+N_g$ equations. 
-        However, now we run into a problem because we have introduced an additional set of $N_g$ slack variables to the problem and so we still have an under-defined set of equations. 
-        In other words, we don't have any equations to constrain the values for the slack variables, so we can not yet solve for solutions that minimize the Lagrangian. 
 
-        You might be tempted to simply differentiate with respect to $\xi$, since thats what we have done in all the previous cases. 
-        But, a quick look shows that this will not work.
-        \begin{equation}
-            \frac{d\mathcal{L}}{d\xi} = \lambda \label{eq:dL_dxi}
-        \end{equation}
-        The only way for Equation~\eqref{eq:dL_dxi} to equal zero is if $\lambda=0$, which is not at all what we want. 
-        Rather than adding an additional equation to constraint $\xi$, instead our additional equation has actually removed the necessary additional degree of freedom that $\lambda$ introduced in the first place. 
-        So, to avoid this situation we need to find another way to constrain $\xi$. 
+        \begin{alignat}{3}
+            \frac{d\mathcal{L}}{d\lambda} &= G(x) - \xi^2 &&= 0 \label{ieq:dLdlambda} \\
+            \frac{d\mathcal{L}}{dx} &= \frac{dF}{dx} + \lambda \left(\frac{dG}{dx} - 2\xi \frac{d\xi}{dx}\right) &&= 0 \label{ieq:dLdx}
+        \end{alignat}
 
-        Take another look at the $\lambda \xi$ term in Equation~\eqref{eq:L_ineq}. 
-        Since $\xi$ is a free variable which must be less than 0, we could set $\xi=-\infty$ and then $\mathcal{L}=-\infty$
-        . 
-        This is obviously a degenerate solution that we want to avoid, so to exclude it we can see that if $\xi \ne 0$ then $\lambda = 0$. 
-        Similarly, $\lambda$ is also a free variable so that if it $\lambda\ne0$, then $\xi=0$. 
-        So, in order to avoid these degenerate solutions with $\mathcal{L}=-\infty$, we must enforce what is called the complementary slackness condition: 
+        However, now we run into a problem because we have introduced the new $\xi$ degree of freedom, 
+        also of size $N_g$, so we still have an under-defined set of equations. 
+        In other words, we don't have enough equations to constrain the $\xi$ along with $x$ and $\lambda$.
+        We can not yet solve for solutions that minimize the Lagrangian. 
+
+        To find the extra equations we need, we'll reconsider the original constraint, $g \ge 0$. 
+        Imagine you performed an unconstrained optimization of $f$, the examined the value of $g$ at that point. 
+        Two possible situations arise: 
+        \begin{itemize}
+            \item $g\ge0$: lucky you! The constraint is inactive, and doesn't affect your solution
+            \item $g < 0$: Uh oh! The constraint is active, and must affect your solution
+        \end{itemize}
+
+        Consider first if $g\ge0$. Here we know what the value of $\xi$ thanks to Equation~\eqref{ieq:dLdlambda}. 
+        However, we can take the derivative of Equation~\eqref{ieq:dLdlambda} with respect to $x$ and see that 
         \begin{equation}
-            \lambda \xi = 0 \ , 
+            \frac{dG}{dx} - 2\xi \frac{d\xi}{dx} = 0
         \end{equation}
-        that ensures that one or the other of the two variables must be 0. 
-        The complimentary slackness condition gives us an additional $N_g$ equations, which means we now have a well-defined problem formulation that can be solved to find minima: 
-        \begin{align}
-            G(x) &= 0 \notag \\
-            \frac{dF}{dx} - \lambda \frac{dG}{dx} &= 0 \notag \\
+        This is the exact term in the prenthesis in Equation~\eqref{ieq:dLdx}, and since it is knowably 0 (when $g\ge0)$ it means that $\lambda$ could take any value at all without invalidating Equation~\eqref{ieq:dLdx}. 
+        Above I told you that $\lambda$ represented the derivative of the final solution to the value of the constraint.
+        Since we know the constraint is inactive, though not physically necessary, it would make sense that $\lambda = 0$ for this case. 
+        Hence we will assume this condition when $g\ge0$. 
+
+        Now consider if $g < 0$. Now the constraint is violated, so we the constrained optimum solution needs to adjust until $g\ge 0$ to satisfy the constraint. 
+        If we assume the function is convex (at least locally convex in the neighborhood of our unconstrained optimum), 
+        then we know that $f$ will become less optimal the farther from the unconstrained point we go and hence we want to move as little as possible. 
+        This will occur when $g=0$, so that is our new target for the solution. 
+        We can force this to happen by setting $\xi=0$ and hence forcing $g=0$ via Equation~\eqref{ieq:dLdlambda}. 
+        However, this again changes the structure of Equation~\eqref{ieq:dLdx}, because it brings $\lambda$ back into play as a free variable (i.e. we can no longer assume any value we like for $\lambda$). 
+
+        So in summary, we have two situations: 
+        \begin{itemize}
+            \item $g\ge0$: must have $\lambda=0$
+            \item $g < 0$: must have $\xi=0$
+        \end{itemize}
+        We need to find one equation that will force both these conditions to be true at the right times, depending on the value of $g$. 
+        You might be tempted to use a piecewise function, with a conditional. 
+        That would work, but the mathematicians Karush, Kuhn, and Tucker independently came up with a more elegant solution. 
+        \begin{equation}
+            \lambda \xi = 0 \label{complementary_slackness}
+        \end{equation}
+        This equation is called the "complimentary slackness" condition, which is just a fancy way to to express the 
+        either-or nature of $\lambda$ and $\xi$. 
+        One or the other can be active, but not both. 
+        So the total set of equations for inequality constrained optimization is 
+
+        \begin{alignat}{3}
+            \frac{d\mathcal{L}}{d\lambda} &= G(x) - \xi^2 &&= 0 \\
+            \frac{d\mathcal{L}}{dx} &= \frac{dF}{dx} + \lambda \left(\frac{dG}{dx} - 2\xi \frac{d\xi}{dx}\right) &&= 0 \\
             \lambda \xi &= 0
-            \label{eq:almost_kkt}
-        \end{align}
+        \end{alignat}
+
+
+        As an aside, I find it interesting that these equations were discovered fairly recently. 
+        They were first published by Karish in 1939, but went largely unnoticed at the time. 
+        Later, in 1951 Kuhn and Tucker independently (re)discovered and published their own derivation. 
+        1951 coincides very closely with the dawn of the computer age, when numerical optimization first became feasible on complex problems. 
+
 
     \subsection{Scaling for Optimization Problems}
 
